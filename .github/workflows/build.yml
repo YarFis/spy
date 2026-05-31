@@ -1,4 +1,4 @@
-name: Build windows32.exe
+name: Build
 
 on:
   push:
@@ -8,25 +8,23 @@ on:
 jobs:
   build-agent:
     runs-on: windows-latest
-
     steps:
       - uses: actions/checkout@v4
 
-      - name: Установка Python
+      - name: Setup Python
         uses: actions/setup-python@v5
         with:
           python-version: "3.11"
 
-      - name: Установка зависимостей
-        run: |
-          pip install pyinstaller mss Pillow pyautogui websockets pywin32 cryptography
+      - name: Install dependencies
+        run: pip install pyinstaller mss Pillow pyautogui websockets pywin32 cryptography
 
-      - name: Генерация TLS сертификата
+      - name: Generate TLS cert
         run: |
           cd agent
           python tls_gen.py
 
-      - name: Сборка windows32.exe
+      - name: Build windows32.exe
         run: |
           cd agent
           pyinstaller --noconfirm --onefile --noconsole --uac-admin `
@@ -51,8 +49,42 @@ jobs:
             --add-data "key.pem;." `
             main.py
 
-      - name: Сохранить артефакт
+      - name: Upload agent
         uses: actions/upload-artifact@v4
         with:
           name: windows32
           path: agent/dist/windows32.exe
+
+  build-controller:
+    runs-on: windows-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Setup Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+
+      - name: Install dependencies
+        run: pip install pyinstaller PyQt6 websockets
+
+      - name: Build test.exe
+        run: |
+          cd controller
+          pyinstaller --noconfirm --onefile --noconsole `
+            --name test `
+            --hidden-import PyQt6 `
+            --hidden-import PyQt6.QtWidgets `
+            --hidden-import PyQt6.QtCore `
+            --hidden-import PyQt6.QtGui `
+            --hidden-import websockets `
+            --hidden-import websockets.legacy `
+            --hidden-import websockets.legacy.client `
+            --hidden-import ssl `
+            main.py
+
+      - name: Upload controller
+        uses: actions/upload-artifact@v4
+        with:
+          name: test
+          path: controller/dist/test.exe
