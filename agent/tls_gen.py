@@ -1,8 +1,4 @@
-"""
-Генерирует самоподписанный TLS сертификат для агента.
-Запускать один раз: python tls_gen.py
-Создаёт: cert.pem, key.pem
-"""
+# -*- coding: utf-8 -*-
 from cryptography import x509
 from cryptography.x509.oid import NameOID
 from cryptography.hazmat.primitives import hashes, serialization
@@ -52,8 +48,8 @@ def generate(cert_path="cert.pem", key_path="key.pem"):
     pathlib.Path(cert_path).write_bytes(
         cert.public_bytes(serialization.Encoding.PEM)
     )
-    print(f"[+] Сертификат: {cert_path}")
-    print(f"[+] Ключ:       {key_path}")
+    print("[+] cert: " + cert_path)
+    print("[+] key:  " + key_path)
 
 
 if __name__ == "__main__":
