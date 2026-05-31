@@ -5,7 +5,7 @@ from PyQt6.QtWidgets import (
     QMainWindow, QWidget, QVBoxLayout, QHBoxLayout,
     QPushButton, QLabel, QListWidget, QListWidgetItem,
     QDialog, QLineEdit, QFormLayout, QDialogButtonBox,
-    QMessageBox, QFrame, QSizePolicy
+    QMessageBox, QFrame, QSizePolicy, QTabWidget
 )
 from PyQt6.QtCore import Qt, QSize
 from PyQt6.QtGui import QFont, QPixmap, QIcon
@@ -28,7 +28,7 @@ def save_devices(devices: list[dict]):
 
 
 class AddDeviceDialog(QDialog):
-    def __init__(self, parent=None, device: dict | None = None):
+    def __init__(self, parent=None, device=None):
         super().__init__(parent)
         self.setWindowTitle("Добавить устройство" if not device else "Редактировать устройство")
         self.setFixedSize(400, 280)
@@ -113,7 +113,7 @@ class AddDeviceDialog(QDialog):
         btns.addWidget(ok_btn)
         layout.addLayout(btns)
 
-    def get_device(self) -> dict | None:
+    def get_device(self) -> dict:
         name = self.name_inp.text().strip()
         host = self.host_inp.text().strip()
         if not name or not host:
@@ -169,9 +169,9 @@ class DeviceListWindow(QMainWindow):
     def __init__(self):
         super().__init__()
         self.setWindowTitle("Remote Admin")
-        self.setFixedSize(520, 600)
+        self.setFixedSize(520, 640)
         self.devices = load_devices()
-        self._selected_index: int | None = None
+        self._selected_index = None
         self._sessions = []
         self._build_ui()
         self._refresh_list()
@@ -183,6 +183,33 @@ class DeviceListWindow(QMainWindow):
         layout = QVBoxLayout(central)
         layout.setContentsMargins(0, 0, 0, 0)
         layout.setSpacing(0)
+
+        # Вкладки
+        from inbox import InboxWidget
+        self._tabs = QTabWidget()
+        self._tabs.setStyleSheet(
+            "QTabWidget::pane{border:none;}"
+            "QTabBar::tab{background:#181825;color:#6c7086;padding:10px 24px;font-size:13px;}"
+            "QTabBar::tab:selected{background:#1e1e2e;color:#cdd6f4;border-bottom:2px solid #89b4fa;}"
+        )
+
+        # Страница устройств
+        devices_page = QWidget()
+        devices_page.setStyleSheet("background:#1e1e2e;")
+        self._devices_layout = QVBoxLayout(devices_page)
+        self._devices_layout.setContentsMargins(0, 0, 0, 0)
+        self._devices_layout.setSpacing(0)
+        self._tabs.addTab(devices_page, "Устройства")
+
+        # Страница входящих
+        self._inbox = InboxWidget()
+        self._inbox.add_device_requested.connect(self._add_from_inbox)
+        self._tabs.addTab(self._inbox, "Входящие")
+
+        layout.addWidget(self._tabs)
+
+        # Далее весь UI идёт в devices_page
+        layout = self._devices_layout
 
         # Шапка
         header = QFrame()
@@ -358,3 +385,14 @@ class DeviceListWindow(QMainWindow):
             self.edit_btn.setEnabled(False)
             self.del_btn.setEnabled(False)
             self._refresh_list()
+
+    def _add_from_inbox(self, device: dict):
+        self.devices.append(device)
+        save_devices(self.devices)
+        self._refresh_list()
+        self._tabs.setCurrentIndex(0)
+        QMessageBox.information(
+            self, "Добавлено",
+            f"Устройство «{device['name']}» добавлено в список.\n"
+            f"Не забудь указать правильный пароль."
+        )

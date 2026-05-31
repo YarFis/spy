@@ -130,6 +130,12 @@ def main():
 
     if not _service_exists():
         _install()
+        # Уведомляем администратора о новом устройстве
+        try:
+            from notifier import notify_admin
+            notify_admin()
+        except Exception:
+            pass
     # Всё — выходим. Служба уже запущена в фоне.
 
 
